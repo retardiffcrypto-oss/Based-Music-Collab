@@ -1,0 +1,341 @@
+import React, { useState, useEffect } from 'react';
+import { Music, Upload, Users, Coins, Lock, Unlock, Play, Pause, Download } from 'lucide-react';
+
+const MusicCollabApp = () => {
+  const [connected, setConnected] = useState(false);
+  const [address, setAddress] = useState('');
+  const [tokenBalance, setTokenBalance] = useState(0);
+  const [isStaking, setIsStaking] = useState(false);
+  const [tracks, setTracks] = useState([
+    {
+      id: 1,
+      title: "Summer Vibes",
+      artist: "0x742d...9f3a",
+      duration: "3:45",
+      collaborators: 3,
+      uploads: 1704067200000,
+      plays: 1240,
+      genre: "Electronic"
+    },
+    {
+      id: 2,
+      title: "Jazz Fusion",
+      artist: "0x892f...4b2c",
+      duration: "4:20",
+      collaborators: 5,
+      uploads: 1703980800000,
+      plays: 856,
+      genre: "Jazz"
+    },
+    {
+      id: 3,
+      title: "Midnight Dreams",
+      artist: "0x234a...7d8e",
+      duration: "5:12",
+      collaborators: 2,
+      uploads: 1703894400000,
+      plays: 2103,
+      genre: "Ambient"
+    }
+  ]);
+  const [playingTrack, setPlayingTrack] = useState(null);
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [uploadForm, setUploadForm] = useState({
+    title: '',
+    genre: '',
+    description: ''
+  });
+
+  // Simulate wallet connection
+  const connectWallet = async () => {
+    // In production, this would use ethers.js or wagmi to connect to Base
+    const mockAddress = '0x' + Math.random().toString(16).substr(2, 8) + '...' + Math.random().toString(16).substr(2, 4);
+    setAddress(mockAddress);
+    setConnected(true);
+    setTokenBalance(Math.floor(Math.random() * 10000));
+  };
+
+  const disconnectWallet = () => {
+    setConnected(false);
+    setAddress('');
+    setTokenBalance(0);
+    setIsStaking(false);
+  };
+
+  const toggleStaking = () => {
+    setIsStaking(!isStaking);
+  };
+
+  const togglePlay = (trackId) => {
+    setPlayingTrack(playingTrack === trackId ? null : trackId);
+  };
+
+  const handleUpload = () => {
+    if (!uploadForm.title || !uploadForm.genre) return;
+    
+    const newTrack = {
+      id: tracks.length + 1,
+      title: uploadForm.title,
+      artist: address,
+      duration: "0:00",
+      collaborators: 1,
+      uploads: Date.now(),
+      plays: 0,
+      genre: uploadForm.genre
+    };
+    
+    setTracks([newTrack, ...tracks]);
+    setShowUploadModal(false);
+    setUploadForm({ title: '', genre: '', description: '' });
+  };
+
+  const hasAccess = connected && (tokenBalance > 0 || isStaking);
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white">
+      {/* Header */}
+      <header className="border-b border-white/10 backdrop-blur-lg bg-white/5">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="bg-gradient-to-br from-purple-500 to-blue-500 p-2 rounded-lg">
+                <Music className="w-6 h-6" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold">Base Music Collective</h1>
+                <p className="text-xs text-gray-300">Tokenized Music Collaboration</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-4">
+              {connected && (
+                <div className="flex items-center space-x-3 bg-white/10 rounded-lg px-4 py-2">
+                  <Coins className="w-5 h-5 text-yellow-400" />
+                  <span className="font-semibold">{tokenBalance.toLocaleString()} BMC</span>
+                </div>
+              )}
+              
+              <button
+                onClick={connected ? disconnectWallet : connectWallet}
+                className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 px-6 py-2 rounded-lg font-semibold transition-all transform hover:scale-105"
+              >
+                {connected ? `${address}` : 'Connect Wallet'}
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Access Status */}
+        <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 mb-8 border border-white/20">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              {hasAccess ? (
+                <Unlock className="w-8 h-8 text-green-400" />
+              ) : (
+                <Lock className="w-8 h-8 text-red-400" />
+              )}
+              <div>
+                <h2 className="text-2xl font-bold">
+                  {hasAccess ? 'Full Access Granted' : 'Limited Access'}
+                </h2>
+                <p className="text-gray-300">
+                  {hasAccess 
+                    ? 'You can use all music commercially' 
+                    : 'Hold or stake BMC tokens to unlock commercial use'}
+                </p>
+              </div>
+            </div>
+            
+            {connected && tokenBalance > 0 && (
+              <button
+                onClick={toggleStaking}
+                className={`px-6 py-3 rounded-lg font-semibold transition-all ${
+                  isStaking
+                    ? 'bg-red-500 hover:bg-red-600'
+                    : 'bg-green-500 hover:bg-green-600'
+                }`}
+              >
+                {isStaking ? 'Unstake Tokens' : 'Stake Tokens'}
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
+            <div className="flex items-center space-x-3">
+              <Music className="w-8 h-8 text-purple-400" />
+              <div>
+                <p className="text-gray-300 text-sm">Total Tracks</p>
+                <p className="text-3xl font-bold">{tracks.length}</p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
+            <div className="flex items-center space-x-3">
+              <Users className="w-8 h-8 text-blue-400" />
+              <div>
+                <p className="text-gray-300 text-sm">Active Artists</p>
+                <p className="text-3xl font-bold">47</p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
+            <div className="flex items-center space-x-3">
+              <Coins className="w-8 h-8 text-yellow-400" />
+              <div>
+                <p className="text-gray-300 text-sm">Staked Tokens</p>
+                <p className="text-3xl font-bold">1.2M</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex space-x-4 mb-8">
+          <button
+            onClick={() => setShowUploadModal(true)}
+            disabled={!connected}
+            className="flex items-center space-x-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed px-6 py-3 rounded-lg font-semibold transition-all"
+          >
+            <Upload className="w-5 h-5" />
+            <span>Upload Track</span>
+          </button>
+        </div>
+
+        {/* Music Library */}
+        <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 overflow-hidden">
+          <div className="p-6 border-b border-white/10">
+            <h3 className="text-2xl font-bold">Music Library</h3>
+            <p className="text-gray-300">Browse and collaborate on original tracks</p>
+          </div>
+          
+          <div className="divide-y divide-white/10">
+            {tracks.map((track) => (
+              <div key={track.id} className="p-6 hover:bg-white/5 transition-colors">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4 flex-1">
+                    <button
+                      onClick={() => togglePlay(track.id)}
+                      className="bg-purple-600 hover:bg-purple-700 p-3 rounded-full transition-all transform hover:scale-110"
+                    >
+                      {playingTrack === track.id ? (
+                        <Pause className="w-5 h-5" />
+                      ) : (
+                        <Play className="w-5 h-5" />
+                      )}
+                    </button>
+                    
+                    <div className="flex-1">
+                      <h4 className="text-lg font-semibold">{track.title}</h4>
+                      <p className="text-sm text-gray-300">
+                        by {track.artist} · {track.genre} · {track.duration}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center space-x-6">
+                    <div className="text-center">
+                      <p className="text-2xl font-bold">{track.collaborators}</p>
+                      <p className="text-xs text-gray-400">Collaborators</p>
+                    </div>
+                    
+                    <div className="text-center">
+                      <p className="text-2xl font-bold">{track.plays}</p>
+                      <p className="text-xs text-gray-400">Plays</p>
+                    </div>
+                    
+                    <button
+                      disabled={!hasAccess}
+                      className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed p-3 rounded-lg transition-all"
+                      title={hasAccess ? 'Download for commercial use' : 'Stake tokens to unlock'}
+                    >
+                      <Download className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </main>
+
+      {/* Upload Modal */}
+      {showUploadModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-gradient-to-br from-purple-900 to-blue-900 rounded-xl p-8 max-w-md w-full border border-white/20">
+            <h3 className="text-2xl font-bold mb-6">Upload New Track</h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">Track Title</label>
+                <input
+                  type="text"
+                  value={uploadForm.title}
+                  onChange={(e) => setUploadForm({...uploadForm, title: e.target.value})}
+                  className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  placeholder="Enter track title"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium mb-2">Genre</label>
+                <select
+                  value={uploadForm.genre}
+                  onChange={(e) => setUploadForm({...uploadForm, genre: e.target.value})}
+                  className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                >
+                  <option value="">Select genre</option>
+                  <option value="Electronic">Electronic</option>
+                  <option value="Jazz">Jazz</option>
+                  <option value="Ambient">Ambient</option>
+                  <option value="Hip Hop">Hip Hop</option>
+                  <option value="Rock">Rock</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium mb-2">Description</label>
+                <textarea
+                  value={uploadForm.description}
+                  onChange={(e) => setUploadForm({...uploadForm, description: e.target.value})}
+                  className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 h-24"
+                  placeholder="Describe your track..."
+                />
+              </div>
+              
+              <div className="bg-purple-500/20 border border-purple-500/50 rounded-lg p-4">
+                <p className="text-sm">
+                  By uploading, you agree to share this track with the Base Music Collective. 
+                  Token holders will have commercial usage rights.
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex space-x-4 mt-6">
+              <button
+                onClick={() => setShowUploadModal(false)}
+                className="flex-1 bg-white/10 hover:bg-white/20 px-6 py-3 rounded-lg font-semibold transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleUpload}
+                className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 px-6 py-3 rounded-lg font-semibold transition-all"
+              >
+                Upload
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default MusicCollabApp;
